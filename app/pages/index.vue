@@ -1,4 +1,7 @@
 <script setup lang="ts">
+
+import { isValidTitle, formatTodoInput } from '~/utils/index'
+
 interface Todo {
   id: number
   title: string
@@ -19,10 +22,10 @@ async function fetchTodos() {
 }
 
 async function addTodo() {
-  if (!newTitle.value.trim()) return
+  if (!isValidTitle(newTitle.value)) return
   await $fetch('/api/post', {
     method: 'POST',
-    body: { title: newTitle.value.trim(), desc: newDesc.value.trim() },
+    body: formatTodoInput(newTitle.value, newDesc.value),
   })
   newTitle.value = ''
   newDesc.value = ''
