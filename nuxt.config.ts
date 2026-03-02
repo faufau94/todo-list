@@ -8,8 +8,20 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
+    server: {
+      watch: {
+        usePolling: true,
+      },
+    },
+  },
+  devServer: {
+    host: '0.0.0.0',
   },
   runtimeConfig: {
-    databaseUrl: process.env.DATABASE_URL, // serveur uniquement
+    dbHost: process.env.DB_HOST,
+    dbPort: process.env.DB_PORT,
+    dbUser: process.env.DB_USER,
+    dbPassword: process.env.DB_PASSWORD,
+    dbName: process.env.DB_NAME,
   }
 })

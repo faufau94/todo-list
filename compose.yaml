@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NUXT_DB_HOST=db
+      - NUXT_DB_PORT=3306
+      - NUXT_DB_USER=${DB_USER}
+      - NUXT_DB_PASSWORD=${DB_PASSWORD}
+      - NUXT_DB_NAME=${DB_NAME}
+    depends_on:
+      db:
+        condition: service_healthy   # attend que MySQL soit vraiment prêt
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql   # persiste les données
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
