@@ -14,6 +14,7 @@ Application de prise de notes (todo list) développée avec **Nuxt 4**, **Drizzl
 | Base de données | MySQL 8.0               |
 | Conteneurisation | Docker, Docker Compose  |
 | CI/CD        | GitHub Actions               |
+| Registry     | GitHub Container Registry (GHCR) |
 | Tests        | Vitest                       |
 
 ## Architecture
@@ -152,28 +153,40 @@ Un pipeline GitHub Actions est configuré dans `.github/workflows/workflow.yaml`
 Push / PR sur main
        │
        ▼
-┌──────────────────┐
-│  Checkout code   │
-└────────┬─────────┘
-         ▼
-┌──────────────────┐
-│  Setup Node 22   │
-└────────┬─────────┘
-         ▼
-┌──────────────────┐
-│  yarn install    │
-└────────┬─────────┘
-         ▼
-┌──────────────────┐
-│  yarn test       │
-│  ✅ Pass → OK    │
-│  ❌ Fail → Stop  │
-└──────────────────┘
+┌──────────────────────────┐
+│  Job 1 : Tests (CI)      │
+│  ──────────────────────── │
+│  Checkout code            │
+│  Setup Node 22            │
+│  yarn install             │
+│  yarn test                │
+│  ✅ Pass → suite          │
+│  ❌ Fail → stop           │
+└────────────┬─────────────┘
+             │ (needs)
+             ▼
+┌──────────────────────────┐
+│  Job 2 : Docker (CD)     │
+│  ──────────────────────── │
+│  Checkout code            │
+│  Login GHCR               │
+│  Build image Docker       │
+│  Push image → GHCR        │
+└──────────────────────────┘
+             │
+             ▼
+  ghcr.io/<username>/todo-list-app:latest
 ```
+
+Le mot clé `needs` entre les deux jobs garantit que l'image Docker n'est buildée et poussée **que si les tests passent**.
 
 ### Tests
 
 Les tests unitaires se trouvent dans `test/unit/` et utilisent Vitest. La logique métier testable (validation, formatage) est extraite dans `app/utils/` pour pouvoir être importée et testée indépendamment des composants Vue.
+
+### Registry
+
+L'image Docker est poussée automatiquement sur **GitHub Container Registry (GHCR)** à chaque push sur `main`. L'authentification utilise le `GITHUB_TOKEN` fourni automatiquement par GitHub Actions (aucune configuration manuelle requise).
 
 ## Ce que j'ai appris
 
@@ -185,3 +198,6 @@ Les tests unitaires se trouvent dans `test/unit/` et utilisent Vitest. La logiqu
 - **`nuxt.config.ts` n'est pas hot-reloadé** - il faut relancer le serveur après chaque modification
 - **L'alias `~` de Nuxt** ne fonctionne pas dans les tests unitaires en environnement Node - utiliser des chemins relatifs
 - **Séparer la logique métier des composants Vue** permet de la tester facilement avec des unit tests, sans avoir besoin de l'environnement Nuxt
+- **GHCR (GitHub Container Registry)** est inclus dans GitHub, pas besoin de compte séparé - l'auth est automatique via `GITHUB_TOKEN`
+- **`needs` dans GitHub Actions** permet de chaîner les jobs séquentiellement - le job Docker ne se lance que si les tests passent
+- **Chaque job GitHub Actions tourne sur une machine neuve** - il faut re-checkout le code dans chaque job car les machines sont isolées
