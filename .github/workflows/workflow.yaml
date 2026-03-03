@@ -1,0 +1,31 @@
+# le nom du worflow qui s'affichera dans l'onglet 'Actions' de Github
+name: CI Pipeline
+
+# trigger
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# les étapes du workflows éxécutés séquentiellement
+jobs:
+  build-and-test-it: # name of the job
+    runs-on: ubuntu-latest # la machine sur laquelle sera éxécuté le code
+  
+    # chaque étape est éxécuté l'une après l'autre
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4 # utiliser une action pré-faite par la communauté Github
+
+      - name: Installe Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+      
+      - name: Installe les dépendances
+        run: yarn install
+      
+      - name: Lancer les tests
+        run: yarn test

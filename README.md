@@ -1,4 +1,4 @@
-# Nuxt Todo List : Dockerisation avec MySQL & Drizzle ORM
+# Nuxt Todo List : Dockerisation, CI/CD avec MySQL & Drizzle ORM
 
 ## Contexte
 
@@ -13,6 +13,8 @@ Application de prise de notes (todo list) développée avec **Nuxt 4**, **Drizzl
 | ORM        | Drizzle ORM                    |
 | Base de données | MySQL 8.0               |
 | Conteneurisation | Docker, Docker Compose  |
+| CI/CD        | GitHub Actions               |
+| Tests        | Vitest                       |
 
 ## Architecture
 
@@ -56,6 +58,7 @@ docker compose up --build
 | `yarn db:generate`  | Génère les fichiers de migration Drizzle       |
 | `yarn db:migrate`   | Applique les migrations sur la DB              |
 | `yarn dev`          | Lancement en mode développement local          |
+| `yarn test`         | Lancement des tests unitaires (Vitest)         |
 
 ## Problèmes rencontrés & solutions
 
@@ -139,6 +142,39 @@ vite: {
 }
 ```
 
+## CI/CD
+
+Un pipeline GitHub Actions est configuré dans `.github/workflows/workflow.yaml`. Il se déclenche à chaque push ou pull request sur `main`.
+
+### Pipeline
+
+```
+Push / PR sur main
+       │
+       ▼
+┌──────────────────┐
+│  Checkout code   │
+└────────┬─────────┘
+         ▼
+┌──────────────────┐
+│  Setup Node 22   │
+└────────┬─────────┘
+         ▼
+┌──────────────────┐
+│  yarn install    │
+└────────┬─────────┘
+         ▼
+┌──────────────────┐
+│  yarn test       │
+│  ✅ Pass → OK    │
+│  ❌ Fail → Stop  │
+└──────────────────┘
+```
+
+### Tests
+
+Les tests unitaires se trouvent dans `test/unit/` et utilisent Vitest. La logique métier testable (validation, formatage) est extraite dans `app/utils/` pour pouvoir être importée et testée indépendamment des composants Vue.
+
 ## Ce que j'ai appris
 
 - **Les variables d'environnement Nuxt en production** sont préfixées par `NUXT_` et mappées automatiquement vers `runtimeConfig`
@@ -147,3 +183,5 @@ vite: {
 - **Drizzle ORM ne crée pas les tables** - il faut un système de migrations explicite
 - **Le multi-stage build** permet de produire des images légères en ne copiant que le build final
 - **`nuxt.config.ts` n'est pas hot-reloadé** - il faut relancer le serveur après chaque modification
+- **L'alias `~` de Nuxt** ne fonctionne pas dans les tests unitaires en environnement Node - utiliser des chemins relatifs
+- **Séparer la logique métier des composants Vue** permet de la tester facilement avec des unit tests, sans avoir besoin de l'environnement Nuxt
