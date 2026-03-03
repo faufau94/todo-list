@@ -16,6 +16,7 @@ Application de prise de notes (todo list) développée avec **Nuxt 4**, **Drizzl
 | CI/CD        | GitHub Actions               |
 | Registry     | GitHub Container Registry (GHCR) |
 | Tests        | Vitest                       |
+| Hébergement  | Hostinger VPS + Coolify        |
 
 ## Architecture
 
@@ -187,6 +188,10 @@ Les tests unitaires se trouvent dans `test/unit/` et utilisent Vitest. La logiqu
 ### Registry
 
 L'image Docker est poussée automatiquement sur **GitHub Container Registry (GHCR)** à chaque push sur `main`. L'authentification utilise le `GITHUB_TOKEN` fourni automatiquement par GitHub Actions (aucune configuration manuelle requise).
+
+## Déploiement
+
+L'application est déployée sur un **VPS Hostinger** via **Coolify** (plateforme de déploiement self-hosted). L'image Docker est récupérée depuis GHCR et une base de données MySQL est configurée directement dans Coolify. Les variables d'environnement `NUXT_DB_*` sont définies dans les settings de l'app sur Coolify pour connecter l'application à la base de données.
 
 ## Ce que j'ai appris
 
