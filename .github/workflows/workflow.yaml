@@ -8,6 +8,11 @@ on:
   pull_request:
     branches: [main]
 
+# Par défaut, le pipeline n'a que des droits en lecture. On ajoute packages: write pour que le push vers GHCR soit accepté.
+permissions:
+  contents: read  # lire le code dans le dépôt
+  packages: write # écrire dans GitHub Container Registry
+
 # les étapes du workflows éxécutés séquentiellement
 jobs:
   build-and-test-it: # name of the job
@@ -29,3 +34,36 @@ jobs:
       
       - name: Lancer les tests
         run: yarn test
+
+  build-and-push-to-ghcr:
+    runs-on: ubuntu-latest
+    needs: build-and-test-it # ce job ne démarre que si le job 'build-and-test-it' est terminé avec succès
+
+    steps:
+      # chaque job doit lui aussi récupérer le code car il tourne sur une machine neuve, les jobs sont donc isolés les uns des autres. On télécharge à nouveau le code pour pouvoir accéder au Dockerfile et construire l'image.
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      # Connexion au GHCR (GitHub Container Registry)
+      - name: Se connecter à GHCR 
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build et push l'image Docker vers GHCR
+        uses: docker/build-push-action@v6
+        with:
+          # "context: ." permet d'utiliser le Dockerfile à la racine du projet
+          context: .
+          # Après le build, envoie l'image sur GHCR avec le tag "latest". Le nom de l'image est "todo-list-app" et elle est stockée dans le compte GHCR de l'utilisateur.
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/todo-list-app:latest
+
+
+# Pour permettre l'enregistrement de l'image Docker dans le GHCR (GitHub Container Registry), il faut
+# 1. Ajouter permissions: entre on: et jobs:
+# 2. Ajouter le job docker: après ton job existant
+# 3. Remplacer TON-USERNAME par ton username GitHub en minuscules
+# 4. Push sur main
